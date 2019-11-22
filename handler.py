@@ -1,24 +1,34 @@
 import json
+import logging
+
+from models import Model
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
-def hello(event, context):
-    body = {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "input": event
-    }
+def onconnect(request_context):
+    conn_id = request_context.get('connectionId')
+    model = Model()
+    model.create_connection(conn_id)
 
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
 
-    return response
+def ondisconnect(request_context):
+    conn_id = request_context.get('connectionId')
+    model = Model()
+    model.delete_connection(conn_id)
 
-    # Use this code if you don't use the http event with the LAMBDA-PROXY
-    # integration
-    """
-    return {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "event": event
-    }
-    """
+
+def websocket(event, context):
+    request_context = event['requestContext']
+    event_type = request_context.get('eventType')
+
+    if event_type == 'CONNECT':
+        onconnect(request_context)
+    elif event_type == 'DISCONNECT':
+        ondisconnect(request_context)
+
+    else:
+        logger.info('unrecognized eventType')
+
+
