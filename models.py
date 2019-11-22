@@ -1,4 +1,5 @@
 import boto3
+import gzip
 import json
 import random
 import time
@@ -127,7 +128,8 @@ class Model:
             raise ValueError('Board %s does not exist' % board_id)
 
         pk = self.pk(board_id, 'line')
-        self.db.create_item(pk, self.ts(), line_data=json.dumps(line_data))
+        gzipped_line = gzip.compress(json.dumps(line_data).encode())
+        self.db.create_item(pk, self.ts(), line_data=gzipped_line)
 
     def query_lines(self, board_id, after=None):
         """Return lines after given timestamp.
@@ -137,7 +139,7 @@ class Model:
         return [{
             'pk': line['pk'],
             'created_ts': line['created_ts'],
-            'line_data': json.loads(line['line_data'])
+            'line_data': json.loads(gzip.decomprss(line['line_data'])),
         } for line in lines]
 
     def delete_lines_before_or_equal(self, board_id, before_or_equal):
