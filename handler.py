@@ -12,23 +12,36 @@ def onconnect(request_context):
     model = Model()
     model.create_connection(conn_id)
 
+    return {
+        'statusCode': 200,
+        'body': 'success',
+    }
+
 
 def ondisconnect(request_context):
     conn_id = request_context.get('connectionId')
     model = Model()
     model.delete_connection(conn_id)
 
+    return {
+        'statusCode': 200,
+        'body': 'success',
+    }
 
-def websocket(event, context):
+def websocket_connection_manager(event, context):
     request_context = event['requestContext']
     event_type = request_context.get('eventType')
 
     if event_type == 'CONNECT':
-        onconnect(request_context)
+        return onconnect(request_context)
     elif event_type == 'DISCONNECT':
-        ondisconnect(request_context)
+        return ondisconnect(request_context)
 
     else:
         logger.info('unrecognized eventType')
+        return {
+            'statusCode': 500,
+            'body': 'unknown event type',
+        }
 
 
