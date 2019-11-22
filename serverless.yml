@@ -33,6 +33,11 @@ functions:
       - websocket:
           route: $disconnect
 
+  compressBoard:
+    handler: handler.compress_board
+    events:
+      - schedule: rate(5 minutes)
+
 plugins:
   - serverless-python-requirements
 

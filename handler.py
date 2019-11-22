@@ -60,6 +60,8 @@ def ondisconnect(event):
     return success('success')
 
 def websocket_connection_manager(event, context):
+    """Connection manager for websocket $connect and $disconnect.
+    """
 
     event_type = get_event_type(event)
     if event_type == 'CONNECT':
@@ -72,3 +74,9 @@ def websocket_connection_manager(event, context):
         return error400('unknown event type')
 
 
+def compress_board(event, context):
+    """Compress the board periodically.
+    """
+    logger.info('compress_board called')
+
+    return success('success')
