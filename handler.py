@@ -10,12 +10,27 @@ logger.setLevel(logging.DEBUG)
 def get_connection_id(event):
     return event['requestContext'].get('connectionId')
 
+def get_body(event):
+    try:
+        return json.loads(event.get('body', ''))
+    except:
+        logger.debug('event body could not be decoded')
+        return {}
+
 
 def get_query_params(event):
     return event.get('queryStringParameters')
 
 def get_event_type(event):
     return event['requestContext'].get('eventType')
+
+def send_to_connection(event, conn_id, data):
+    gatewayapi = boto3.client(
+        'apigatewaymanagementapi',
+        endpoint_url='https://%s/%s' % (event['requestContext']['domainName'], event['requestContext']['stage'])
+    )
+    return gatewayapi.post_to_connection(ConnectionId=conn_id, Data=json.dumps(data).encode('utf-8'))
+
 
 def success(data):
     return {
@@ -72,6 +87,16 @@ def websocket_connection_manager(event, context):
     else:
         logger.info('unrecognized eventType')
         return error400('unknown event type')
+
+def add_line(event, context):
+    """Add a line to the board.
+    """
+    body = get_body(event)
+    logger.info('body = ' + json.dumps(body))
+
+    model = Model()
+
+    return success('success')
 
 
 def compress_board(event, context):

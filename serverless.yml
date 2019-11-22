@@ -33,6 +33,12 @@ functions:
       - websocket:
           route: $disconnect
 
+  addLine:
+    handler: handler.add_line
+    events:
+      - websocket:
+          route: addLine
+
   compressBoard:
     handler: handler.compress_board
     events:
