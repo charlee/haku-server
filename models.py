@@ -170,4 +170,3 @@ class Model:
             return True
         
         return False
-

@@ -39,6 +39,12 @@ functions:
       - websocket:
           route: addLine
 
+  init:
+    handler: handler.init
+    events:
+      - websocket:
+          route: init
+
   compressBoard:
     handler: handler.compress_board
     events:

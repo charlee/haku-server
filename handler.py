@@ -18,7 +18,6 @@ def get_body(event):
         logger.debug('event body could not be decoded')
         return {}
 
-
 def get_query_params(event):
     return event.get('queryStringParameters')
 
@@ -39,8 +38,10 @@ def send_to_connection(event, conn_id, action, payload):
         'payload': payload,
     }
 
-    return gatewayapi.post_to_connection(ConnectionId=conn_id, Data=json.dumps(message).encode('utf-8'))
-
+    try:
+        return gatewayapi.post_to_connection(ConnectionId=conn_id, Data=json.dumps(message).encode('utf-8'))
+    except:
+        pass
 
 def success(data):
     return {
@@ -74,13 +75,52 @@ def onconnect(event):
 
         model.create_connection(conn_id, board_id)
 
+    logger.info('[CONNECT] connection %s connected' % conn_id)
+
+    # notify other connections
+    conns = model.query_connections(board_id)
+    all_conn_ids = [conn['conn_id'] for conn in conns]
+    other_conn_ids = [cid for cid in all_conn_ids if cid != conn_id]
+
+    # send board data to other connections
+    board_data = {
+        'boardId': board_id,
+        'myConnectionId': None,
+        'image': {},
+        'lines': [],
+        'connections': all_conn_ids,
+    }
+
+    for cid in other_conn_ids:
+        send_to_connection(event, cid, 'boardData', board_data)
+
     return success('success')
 
 
 def ondisconnect(event):
     conn_id = get_connection_id(event)
     model = Model()
+    conn = model.get_connection(conn_id)
+    board_id = conn['board_id']
     model.delete_connection(conn_id)
+
+    logger.info('[DISCONNECT] connection %s disconnected' % conn_id)
+
+    # notify other connections
+    conns = model.query_connections(board_id)
+    all_conn_ids = [conn['conn_id'] for conn in conns if conn['conn_id'] != conn_id]
+
+    # send board data to other connections
+    board_data = {
+        'boardId': board_id,
+        'myConnectionId': None,
+        'image': {},
+        'lines': [],
+        'connections': all_conn_ids,
+    }
+
+    for cid in all_conn_ids:
+        send_to_connection(event, cid, 'boardData', board_data)
 
     return success('success')
 
@@ -105,22 +145,47 @@ def add_line(event, context):
     body = get_body(event)
     line = body['payload']
 
-    logger.info('Line created, data = ' + json.dumps(line))
+    logger.debug('Line created, data = ' + json.dumps(line))
 
     board_id = line['boardId']
 
+    # save line to db
     model = Model()
     model.create_line(board_id, line)
 
+    # find other connections in this board
     conns = model.query_connections(board_id)
     other_conn_ids = [conn['conn_id'] for conn in conns if conn['conn_id'] != my_conn_id]
 
-    logger.info('Sending to other connections, conn_ids = ' + json.dumps(other_conn_ids))
+    logger.debug('Sending to other connections, conn_ids = ' + json.dumps(other_conn_ids))
 
+    # send line to other connections
     for conn_id in other_conn_ids:
         send_to_connection(event, conn_id, 'lineAdded', line)
 
     return success('success')
+
+def init(event, context):
+    """Init request. Return board image, lines, and connections.
+    """
+    conn_id = get_connection_id(event)
+
+    model = Model()
+    conn = model.get_connection(conn_id)
+    board_id = conn['board_id']
+
+    connections = model.query_connections(board_id)
+    conn_ids = [conn['conn_id'] for conn in connections]
+
+    board_data = {
+        'boardId': board_id,
+        'myConnectionId': conn_id,
+        'image': {},
+        'lines': [],
+        'connections': conn_ids,
+    }
+
+    send_to_connection(event, conn_id, 'boardData', board_data)
 
 
 def compress_board(event, context):
