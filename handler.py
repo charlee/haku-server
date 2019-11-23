@@ -171,17 +171,27 @@ def init(event, context):
     conn_id = get_connection_id(event)
 
     model = Model()
+
+    # Get current board id from the connection
     conn = model.get_connection(conn_id)
     board_id = conn['board_id']
 
+    # Get all connections from this board, so that UI can show the user list
     connections = model.query_connections(board_id)
     conn_ids = [conn['conn_id'] for conn in connections]
 
+    # TODO: get board information(include the last_image_ts)
+
+    # TODO: get the lastest image
+
+    # TODO: get the lines from last_image_ts to now
+
+    # Assemble the board data
     board_data = {
         'boardId': board_id,
         'myConnectionId': conn_id,
         'image': {},
-        'lines': [],
+        'lines': [],:
         'connections': conn_ids,
     }
 
@@ -192,5 +202,24 @@ def compress_board(event, context):
     """Compress the board periodically.
     """
     logger.info('compress_board called')
+
+    # TODO: get all boards
+
+
+    # TODO: for each board:
+
+    # TODO: get board information(including the last_image_ts)
+
+    # TODO: get the latest image
+
+    # TODO: read all lines from last_image_ts to now
+
+    # TODO: draw each line onto the latest image
+
+    # TODO: save the image
+
+    # TODO: update the board.last_image_ts
+
+    # TODO: (optional) delete old line data
 
     return success('success')
