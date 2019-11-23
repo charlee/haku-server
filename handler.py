@@ -1,4 +1,5 @@
 import json
+import boto3
 import logging
 
 from models import Model
@@ -24,12 +25,21 @@ def get_query_params(event):
 def get_event_type(event):
     return event['requestContext'].get('eventType')
 
-def send_to_connection(event, conn_id, data):
+
+def send_to_connection(event, conn_id, action, payload):
+    """Send message to conn_id.
+    """
     gatewayapi = boto3.client(
         'apigatewaymanagementapi',
         endpoint_url='https://%s/%s' % (event['requestContext']['domainName'], event['requestContext']['stage'])
     )
-    return gatewayapi.post_to_connection(ConnectionId=conn_id, Data=json.dumps(data).encode('utf-8'))
+
+    message = {
+        'action': action,
+        'payload': payload,
+    }
+
+    return gatewayapi.post_to_connection(ConnectionId=conn_id, Data=json.dumps(message).encode('utf-8'))
 
 
 def success(data):
@@ -91,10 +101,24 @@ def websocket_connection_manager(event, context):
 def add_line(event, context):
     """Add a line to the board.
     """
+    my_conn_id = get_connection_id(event)
     body = get_body(event)
-    logger.info('body = ' + json.dumps(body))
+    line = body['payload']
+
+    logger.info('Line created, data = ' + json.dumps(line))
+
+    board_id = line['boardId']
 
     model = Model()
+    model.create_line(board_id, line)
+
+    conns = model.query_connections(board_id)
+    other_conn_ids = [conn['conn_id'] for conn in conns if conn['conn_id'] != my_conn_id]
+
+    logger.info('Sending to other connections, conn_ids = ' + json.dumps(other_conn_ids))
+
+    for conn_id in other_conn_ids:
+        send_to_connection(event, conn_id, 'lineAdded', line)
 
     return success('success')
 
