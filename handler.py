@@ -252,13 +252,16 @@ def compress_board(event, context):
     """
     logger.info('compress_board called')
 
-    # TODO: get all boards
+    # get all boards
     model = Model()
-    board_ids = ['1234567890']
+    board_ids = model.get_all_boards()
+    logger.info(board_ids)
 
     # for each board:
     for id in board_ids:
 
+        logger.info("Board -->" + str(id))
+                    
     # get board information(including the last_image_ts)
         item = model.get_board(id)
         
@@ -276,7 +279,7 @@ def compress_board(event, context):
             logger.info("Not enough lines to compress " + 
                         str(len(lines_data)) + "<" +
                         str(settings['MIN_NUM_LINES_COMPRESS']))
-            return
+            continue
 
         logger.debug(lines_data[0])
 
