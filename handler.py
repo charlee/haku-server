@@ -226,11 +226,11 @@ def draw_from_lines(im, lines_data):
                     width = line['width'] )
     
     output = io.BytesIO()
-    image.save(output, format='JPEG')
+    image.save(output, format='PNG')
 
-    # image.save("test.JPEG")
+    # image.save("test.PNG")
 
-    return output
+    return output.getvalue()
 
 def compress_board(event, context):
     """Compress the board periodically.
@@ -263,17 +263,17 @@ def compress_board(event, context):
                         str(settings['MIN_NUM_LINES_COMPRESS']))
             return
 
-        logger.debug(lines_data[0]['line_data'])
+        logger.debug(lines_data[0])
 
     # draw each line onto the latest image
     # save the image to bytes io
-        line_io = draw_from_lines(image, lines_data)
+        image_bytes = draw_from_lines(image, lines_data)
 
     # update the board.last_image_ts and compressed_image
         model.update_compressed_image(
             id, item.get('created_ts'),
-            model.ts(),
-            line_io.getvalue())
+            lines_data[-1]['created_ts'],
+            image_bytes)
         
     # TODO: (optional) delete old line data
 
