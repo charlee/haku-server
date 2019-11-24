@@ -61,6 +61,13 @@ class DynamoDB:
             for item in items:
                 batch.delete_item(Key={'pk': item['pk'], 'created_ts': item['created_ts']})
 
+    def update_item(self, pk, created_ts, update_expression, values):
+        self.table.update_item(
+            Key={'pk': pk, 'created_ts': created_ts},
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=values,
+        )
+
 
 class Model:
     def __init__(self):
@@ -139,7 +146,7 @@ class Model:
         return [{
             'pk': line['pk'],
             'created_ts': line['created_ts'],
-            'line_data': json.loads(gzip.decomprss(line['line_data'])),
+            'line_data': json.loads(gzip.decompress(line['line_data'])),
         } for line in lines]
 
     def delete_lines_before_or_equal(self, board_id, before_or_equal):
@@ -170,3 +177,22 @@ class Model:
             return True
         
         return False
+
+    def update_compressed_image(self, board_id, board_created_ts, last_image_ts, compressed_image):
+        """Update the board info with given last_image_ts and compressed_image.
+        :param board_id: string, board id
+        :param board_created_ts: number, the created_ts of the board info. Since this info is likely already owned by
+                                 the caller, passing this argument could reduce one dynamodb call.
+        :param last_image_ts: number
+        :param compressed_image: bytes
+        """
+        pk = self.pk(board_id, 'board')
+        self.db.update_item(
+            pk,
+            board_created_ts,
+            update_expression='SET last_image_ts=:last_image_ts, compressed_image=:compressed_image',
+            values={
+                ':last_image_ts': last_image_ts,
+                ':compressed_image': compressed_image,
+            }
+        )

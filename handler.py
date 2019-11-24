@@ -191,7 +191,7 @@ def init(event, context):
         'boardId': board_id,
         'myConnectionId': conn_id,
         'image': {},
-        'lines': [],:
+        'lines': [],
         'connections': conn_ids,
     }
 
