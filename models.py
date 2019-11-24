@@ -146,7 +146,7 @@ class Model:
         return [{
             'pk': line['pk'],
             'created_ts': line['created_ts'],
-            'line_data': json.loads(gzip.decompress(line['line_data'])),
+            'line_data': json.loads(gzip.decompress(line['line_data'].value)),
         } for line in lines]
 
     def delete_lines_before_or_equal(self, board_id, before_or_equal):

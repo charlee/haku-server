@@ -1,8 +1,11 @@
 import json
 import boto3
 import logging
+import io
 
 from models import Model
+from PIL import Image, ImageDraw
+from config import settings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -197,6 +200,37 @@ def init(event, context):
 
     send_to_connection(event, conn_id, 'boardData', board_data)
 
+def draw_from_lines(im, lines_data):
+    """Draw image from lines
+    """
+
+    if im == None:
+        # create a new image when nothing exists
+        # 1920 * 1080
+        logger.info('Create a new image')
+        image = Image.new(mode = 'RGB',
+                          size = (1920, 1080),
+                          color = (255, 255, 255)) 
+    else:
+        # open existing one
+        f = io.BytesIO(im.value)
+        image = Image.open(f)
+    
+    # start draw lines
+    draw = ImageDraw.Draw(image)
+    for data in lines_data:
+        
+        line = data['line_data']['data']
+        draw.line(  xy = line['points'],
+                    fill = line['color'],
+                    width = line['width'] )
+    
+    output = io.BytesIO()
+    image.save(output, format='PNG')
+
+    # image.save("test.PNG")
+
+    return output.getvalue()
 
 def compress_board(event, context):
     """Compress the board periodically.
@@ -204,22 +238,43 @@ def compress_board(event, context):
     logger.info('compress_board called')
 
     # TODO: get all boards
+    model = Model()
+    board_ids = ['1234567890']
 
+    # for each board:
+    for id in board_ids:
 
-    # TODO: for each board:
+    # get board information(including the last_image_ts)
+        item = model.get_board(id)
+        
+    # get the latest image and time stamp
+        last_ts = item.get('last_image_ts')
+        image = item.get('compressed_image')
 
-    # TODO: get board information(including the last_image_ts)
+        logger.info('Last compressed time: ' + str(last_ts))
 
-    # TODO: get the latest image
+    # read all lines from last_image_ts to now
+        lines_data = model.query_lines(id, last_ts)
+        
+        if len(lines_data) < settings['MIN_NUM_LINES_COMPRESS']:
+            # not enough lines to be compressed
+            logger.info("Not enough lines to compress " + 
+                        str(len(lines_data)) + "<" +
+                        str(settings['MIN_NUM_LINES_COMPRESS']))
+            return
 
-    # TODO: read all lines from last_image_ts to now
+        logger.debug(lines_data[0])
 
-    # TODO: draw each line onto the latest image
+    # draw each line onto the latest image
+    # save the image to bytes io
+        image_bytes = draw_from_lines(image, lines_data)
 
-    # TODO: save the image
-
-    # TODO: update the board.last_image_ts
-
+    # update the board.last_image_ts and compressed_image
+        model.update_compressed_image(
+            id, item.get('created_ts'),
+            lines_data[-1]['created_ts'],
+            image_bytes)
+        
     # TODO: (optional) delete old line data
 
     return success('success')
