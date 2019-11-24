@@ -33,6 +33,10 @@ class DynamoDB:
         res = self.table.query(KeyConditionExpression=q)
         return res['Items']
 
+    def get_item(self, pk, created_ts):
+        res = self.table.get_item(Key={'pk': pk, 'created_ts': created_ts})
+        return res.get('Item')
+
     def create_item(self, pk, created_ts, **kwargs):
         """Create an item.
         """
@@ -100,6 +104,15 @@ class Model:
         board_id = str(random.randint(1000000000, 9999999999))
         pk = self.pk(board_id, 'board')
         self.db.create_item(pk, self.ts(), board_id=board_id)
+
+        #add the board_id to board set
+        self.db.update_item(
+            'board',
+            0,
+            'ADD boards :board_id',
+            {':board_id': {board_id}},
+        )
+
         return board_id
 
     def create_connection(self, conn_id, board_id=None):
@@ -196,3 +209,10 @@ class Model:
                 ':compressed_image': compressed_image,
             }
         )
+
+    def get_all_boards(self):
+        all_boards = self.db.get_item('board', 0)
+        if all_boards:
+            return list(all_boards['boards'])
+        else:
+            return []

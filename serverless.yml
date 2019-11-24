@@ -39,6 +39,12 @@ functions:
       - websocket:
           route: addLine
 
+  getBoardId:
+    handler: handler.get_board_id
+    events:
+      - websocket:
+          route: getBoardId
+
   init:
     handler: handler.init
     events:
@@ -50,10 +56,13 @@ functions:
     events:
       - schedule: rate(5 minutes)
 
+  # localTest:
+  #   handler: handler.local_test
+
 plugins:
   - serverless-python-requirements
 
 custom:
   pythonRequirements:
-    # dockerizePip: true
+    dockerizePip: true
     noDeploy: []

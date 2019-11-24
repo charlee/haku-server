@@ -232,6 +232,21 @@ def draw_from_lines(im, lines_data):
 
     return output.getvalue()
 
+def local_test(event, context):
+    model = Model()
+    logger.debug('test')
+
+    board_ids = model.get_all_boards()
+    logger.debug(board_ids)
+
+def get_board_id(event, context):
+    conn_id = get_connection_id(event)
+    model = Model()
+    conn = model.get_connection(conn_id)
+
+    send_to_connection(event, conn_id, 'boardId', {'boardId': conn['board_id']})
+
+
 def compress_board(event, context):
     """Compress the board periodically.
     """
