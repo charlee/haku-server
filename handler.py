@@ -228,7 +228,7 @@ def draw_from_lines(im, lines_data):
     output = io.BytesIO()
     image.save(output, format='JPEG')
 
-    image.save("test.JPEG")
+    # image.save("test.JPEG")
 
     return output
 
