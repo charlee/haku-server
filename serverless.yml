@@ -64,5 +64,5 @@ plugins:
 
 custom:
   pythonRequirements:
-    # dockerizePip: true
+    dockerizePip: true
     noDeploy: []
