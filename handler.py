@@ -43,8 +43,8 @@ def send_to_connection(event, conn_id, action, payload):
 
     try:
         return gatewayapi.post_to_connection(ConnectionId=conn_id, Data=json.dumps(message).encode('utf-8'))
-    except:
-        pass
+    except Exception as e:
+        logger.error(e)
 
 def success(data):
     return {
@@ -200,6 +200,8 @@ def init(event, context):
 
     send_to_connection(event, conn_id, 'boardData', board_data)
 
+    return success('success')
+
 def draw_from_lines(im, lines_data):
     """Draw image from lines
     """
@@ -239,12 +241,16 @@ def local_test(event, context):
     board_ids = model.get_all_boards()
     logger.debug(board_ids)
 
+    return success('success')
+
 def get_board_id(event, context):
     conn_id = get_connection_id(event)
     model = Model()
     conn = model.get_connection(conn_id)
 
     send_to_connection(event, conn_id, 'boardId', {'boardId': conn['board_id']})
+
+    return success('success')
 
 
 def compress_board(event, context):
@@ -262,16 +268,16 @@ def compress_board(event, context):
 
         logger.info("Board -->" + str(id))
                     
-    # get board information(including the last_image_ts)
+        # get board information(including the last_image_ts)
         item = model.get_board(id)
         
-    # get the latest image and time stamp
+        # get the latest image and time stamp
         last_ts = item.get('last_image_ts')
         image = item.get('compressed_image')
 
         logger.info('Last compressed time: ' + str(last_ts))
 
-    # read all lines from last_image_ts to now
+        # read all lines from last_image_ts to now
         lines_data = model.query_lines(id, last_ts)
         
         if len(lines_data) < settings['MIN_NUM_LINES_COMPRESS']:
@@ -283,16 +289,14 @@ def compress_board(event, context):
 
         logger.debug(lines_data[0])
 
-    # draw each line onto the latest image
-    # save the image to bytes io
+        # draw each line onto the latest image
+        # save the image to bytes io
         image_bytes = draw_from_lines(image, lines_data)
 
-    # update the board.last_image_ts and compressed_image
+        # update the board.last_image_ts and compressed_image
         model.update_compressed_image(
             id, item.get('created_ts'),
             lines_data[-1]['created_ts'],
             image_bytes)
-        
-    # TODO: (optional) delete old line data
 
     return success('success')
