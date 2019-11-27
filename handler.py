@@ -2,6 +2,7 @@ import json
 import boto3
 import logging
 import io
+import base64
 
 from models import Model
 from PIL import Image, ImageDraw
@@ -171,6 +172,7 @@ def add_line(event, context):
 def init(event, context):
     """Init request. Return board image, lines, and connections.
     """
+
     conn_id = get_connection_id(event)
 
     model = Model()
@@ -184,17 +186,26 @@ def init(event, context):
     conn_ids = [conn['conn_id'] for conn in connections]
 
     # TODO: get board information(include the last_image_ts)
+    current_board_info = model.get_board(board_id)
+    last_ts = current_board_info.get('last_image_ts')
 
     # TODO: get the lastest image
+    current_img = current_board_info.get('compressed_image')
 
     # TODO: get the lines from last_image_ts to now
+    current_lines = model.query_lines(board_id, last_ts)
+
+    if current_img == None:
+        img_decode = None
+    else:
+        img_decode = base64.b64encode(current_img.value).decode()
 
     # Assemble the board data
     board_data = {
         'boardId': board_id,
         'myConnectionId': conn_id,
-        'image': {},
-        'lines': [],
+        'image': img_decode,
+        'lines': [line['line_data'] for line in current_lines],
         'connections': conn_ids,
     }
 
