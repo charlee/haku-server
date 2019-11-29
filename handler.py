@@ -172,7 +172,6 @@ def add_line(event, context):
 def init(event, context):
     """Init request. Return board image, lines, and connections.
     """
-
     conn_id = get_connection_id(event)
 
     model = Model()
@@ -228,24 +227,15 @@ def draw_from_lines(im, lines_data):
         # open existing one
         f = io.BytesIO(im.value)
         image = Image.open(f)
-
-    # Scale up for anti alias
-    orig_size = image.size
-    size = (orig_size[0] * 2, orig_size[1] * 2)
-    image = image.resize(size, resample=Image.BILINEAR)
     
     # start draw lines
     draw = ImageDraw.Draw(image)
     for data in lines_data:
         
         line = data['line_data']['data']
-        points = [v * 2 for v in line['points']]
-        draw.line(  xy = points,
+        draw.line(  xy = line['points'],
                     fill = line['color'],
                     width = line['width'] )
-
-    # Scale down to original size
-    image = image.resize(orig_size, resample=Image.BILINEAR)
     
     output = io.BytesIO()
     image.save(output, format='PNG')
