@@ -54,9 +54,9 @@ functions:
   compressBoard:
     handler: handler.compress_board
     events:
-      - schedule: rate(1 minutes)
+      - schedule: rate(1 minute)
 
-  localTest:
+  # localTest:
     # handler: handler.local_test
 
 plugins:

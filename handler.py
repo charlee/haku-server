@@ -237,9 +237,6 @@ def draw_from_lines(im, lines_data):
                     fill = line['color'],
                     width = line['width'] )
 
-    # Compress image to P mode to save some spaces
-    image = image.quantize(colors=256, method=2)
-    
     output = io.BytesIO()
     image.save(output, format='PNG', optimize=True)
 
