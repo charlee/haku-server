@@ -236,9 +236,12 @@ def draw_from_lines(im, lines_data):
         draw.line(  xy = line['points'],
                     fill = line['color'],
                     width = line['width'] )
+
+    # Compress image to P mode to save some spaces
+    image = image.quantize(colors=256, method=2)
     
     output = io.BytesIO()
-    image.save(output, format='PNG')
+    image.save(output, format='PNG', optimize=True)
 
     # image.save("test.PNG")
 
@@ -248,8 +251,12 @@ def local_test(event, context):
     model = Model()
     logger.debug('test')
 
-    board_ids = model.get_all_boards()
-    logger.debug(board_ids)
+    board_id = '5518912403'
+    lines_data = model.query_lines(board_id)
+    img_data = draw_from_lines(None, lines_data)
+
+    open('test1.png', 'wb').write(img_data)
+    print(len(img_data))
 
     return success('success')
 
